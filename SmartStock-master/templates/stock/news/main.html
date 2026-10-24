@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<!-- 响应式布局 -->
+		 <meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>首页</title>
+		{% include 'system/common/header.html' %}
+		<link rel="stylesheet" href="../../../static/layui_exts/customer/customer.css" />
+		<style>
+		            /* 设置文章标题样式，确保一行只显示一个标题 */
+		           .article-title {
+		                display: block; /* 使标题元素以块级元素显示，独占一行 */
+		                white-space: normal; /* 允许文本换行 */
+		                overflow-wrap: break-word; /* 当单词太长时，允许在单词内换行 */
+		                width: 100%; /* 确保标题元素宽度为父容器的 100% */
+		                margin-bottom: 5px; /* 为每个标题添加一些底部间距 */
+		            }
+		        </style>
+	</head>
+	<body style="background-color: #f7f8fa;">
+		
+		 <!-- 指标卡 -->
+		 <div class="layui-fluid">
+			 <div class="layui-row layui-col-space8" style="padding: 10px;">
+				 
+				 <div class="layui-card">
+				 	<div class="layui-card-body">
+						<form class="layui-form layui-row layui-col-space5">
+							  
+							  <div class="layui-col-md3">
+								<label class="layui-form-label">股票名称</label>
+								<div class="layui-input-block">
+									<select name="name" id="name" lay-search=""></select>
+								</div>
+							  </div>
+				
+							  <div class="layui-col-md2">
+								<button class="pear-btn pear-btn-primary" lay-submit lay-filter="search">搜索</button>
+								<button type="reset" id="reset" class="pear-btn">清空</button>
+							  </div>
+						  
+						</form>
+					   </div>
+					</div>
+				 
+				 
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">舆情等级</div>
+						   <div class="card-fail-value-text3" id='sentiment'></div>
+						 </div>
+				   </div>
+				 
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">总记录</div>
+						   <div class="card-value-text2" id='count'></div>
+						 </div>
+				   </div>
+				   
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">正面</div>
+						   <div class="card-value-text2" id='positive_num'></div>
+						 </div>
+				   </div>
+				   
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">中性</div>
+						   <div class="card-value-text2" id='middle_num'></div>
+						 </div>
+				   </div>
+				   
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">负面</div>
+						   <div class="card-value-text2" id='negative_num'></div>
+						 </div>
+				   </div>
+				   
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">负面率</div>
+						   <div class="card-fail-value-text2" id='negative_rate'>0</div>
+						 </div>
+				   </div>
+				   
+
+				   
+			 </div>
+			 
+			 <!-- 任务趋势 -->
+			 <div class="layui-row layui-col-space8" style="margin-left: 5px;margin-right: 5px;">
+				<div class="layui-col-lg6">
+					 <div class="target-card">
+					   <div id="dateline" style="width: 100%;height:350px;">每日趋势</div>
+					 </div>
+				</div>
+			    <div class="layui-col-lg6">
+				 <div class="target-card">
+				   <div id="status" style="width: 100%;height:350px;">舆情占比</div>
+				 </div>
+			    </div>
+
+			 </div>
+			 
+			 <!-- 任务类型 -->
+			 <div class="layui-row layui-col-space8" style="padding: 10px;">
+			   <div class="layui-col-lg6">
+				 <div class="target-card">
+				   <div class="layui-card-header" style="font-size: 18px;color: #161718;font-weight: bold;">正面文章</div>
+				   <div id="positive_article" style="width: 100%; height: 240px; margin-left: 5px; overflow-y: auto;"></div>
+				 </div>
+			   </div>
+			   <div class="layui-col-lg6">
+				 <div class="target-card">
+				   <div class="layui-card-header" style="font-size: 18px;color: #161718;font-weight: bold;">负面文章</div>
+				   <div id="negative_article" style="width: 100%; height: 240px; margin-left: 5px; overflow-y: auto;"></div>
+				 </div>
+			   </div>
+			 </div>
+		 
+		 </div>
+		
+		<!-- 引入 layui.js -->
+		{% include 'system/common/footer.html' %}
+		<script src="../../../static/layui_exts/echarts/echarts.min.js"></script></script>
+		<script src="../../../static/layui_exts/echarts/walden.js"></script></script>
+		<script>
+			layui.use(function(){
+			                let $ = layui.$;
+			                let form = layui.form;
+			
+			                // 获取列表
+			                function getSelection() {
+			                    $.getJSON("/stock/news/selection",function(d){
+			                        if(d.status==0){
+			                            let list = d.data.options;
+			                            let s='<option value="">请选择或搜索</option>';
+			                            for(let i=0;i<list.length;i++){
+			                                s+='<option value="'+list[i].value+'">'+list[i].label+'</option>';
+			                            }
+			                            // 将拼接好的字符串设置到下拉框位置
+			                            $("#name").html(s);
+			                            // 设置默认选中项，这里假设选择第一个选项
+			                            if (list.length > 0) {
+			                                $('#name').val(list[0].value);
+			                            }
+			                            // 重新渲染表单的下拉框
+			                            form.render('select');
+			                        }else{
+			                            layer.msg(d.msg);
+			                        }
+			                    });
+			                }
+			
+			                // 重载所有仪表板组件
+			                function reloadDashboard() {
+			                    let selectedName = $('#name').val();
+			                    // 指标卡
+			                    $.getJSON("/stock/news/list",{"code": selectedName},function(d){
+			                        if(d.status==0){
+			                            let data = d.data;
+			
+			                            // 指标卡
+			                            $("#count").text(data.count);
+			                            $("#negative_num").text(data.negative_num);
+			                            $("#negative_rate").text(data.negative_rate);
+			                            $("#positive_num").text(data.positive_num);
+			                            $("#middle_num").text(data.middle_num);
+			                            $("#sentiment").text(data.sentiment);
+			
+			                            // 舆情占比
+			                            let processedData = data.sentiment_zb;
+			                            let status = echarts.init(document.getElementById('status'), 'walden');
+			                            let option1 = {
+			                                  title: {
+			                                    text: '舆情占比',
+			                                    textStyle: {
+			                                                color: '#161718', // 红色标题  
+			                                                fontSize: 18, // 字体大小  
+			                                                fontWeight: 'bold' // 字体粗细  
+			                                            }
+			                                  },
+			                                  tooltip: {
+			                                    trigger: 'item'
+			                                  },
+			                                  series: [
+			                                    {
+			                                      name: '类型',
+			                                      type: 'pie',
+			                                      radius: '50%',
+			                                      data: processedData,
+			                                      label: {
+			                                              show: true, // 显示标签  
+			                                              position: 'inside', // 标签位置  
+			                                              color: '#fcfcfc' ,// 标签颜色  
+			                                              formatter: '{b}: {c}' // 这里的 {b} 是数据项名称，{c} 是数据值 
+			                                          },
+			                                      labelLine: {
+			                                        show: true
+			                                      }
+			                                    }
+			                                  ]
+			                                };
+			                            status.setOption(option1);
+			
+			                            // 日期趋势
+			                            let dateline = echarts.init(document.getElementById('dateline'), 'walden');
+			                            let option2 = {
+			                                  title: {
+			                                    text: '每日趋势',
+			                                    textStyle: {
+			                                                color: '#161718', // 红色标题  
+			                                                fontSize: 18, // 字体大小  
+			                                                fontWeight: 'bold' // 字体粗细  
+			                                            }
+			                                },
+			                                  tooltip: {
+			                                    trigger: 'item'
+			                                  },
+			                                  xAxis: data.dateline.xAxis,
+			                                  yAxis: data.dateline.yAxis,
+			                                  series: data.dateline.series
+			                                };
+			                            dateline.setOption(option2);
+			
+			                            // 正面文章
+			                            let positiveContainer = document.getElementById("positive_article");
+			                            positiveContainer.innerHTML = '';
+			                            let positiveArticles = data.positive_data;
+			                            positiveArticles.forEach(function(article) {
+			                                let link = document.createElement("a");
+			                                link.href = article.url;
+			                                link.target = "_blank";
+			                                link.className = "article-title";
+			
+			                                let titleText = document.createTextNode(article.title);
+			                                if (article.is_hot===1) {
+			                                  let hotIcon = document.createElement("span");
+			                                  hotIcon.className = "hot-icon";
+			                                  hotIcon.textContent = "HOT";
+			                                  link.appendChild(hotIcon);
+			                                }
+			
+			                                link.appendChild(titleText);
+			                                positiveContainer.appendChild(link);
+			                              });
+			
+			                            // 负面文章
+										let negativeContainer = document.getElementById("negative_article");
+										negativeContainer.innerHTML = '';
+										let negativeArticles = data.negative_data;
+										negativeArticles.forEach(function(article) {
+											let link = document.createElement("a");
+											link.href = article.url;
+											link.target = "_blank";
+											link.className = "article-title";
+			
+											let titleText = document.createTextNode(article.title);
+											if (article.is_hot===1) {
+												let hotIcon = document.createElement("span");
+												hotIcon.className = "hot-icon";
+												hotIcon.textContent = "HOT";
+												link.appendChild(hotIcon);
+											}
+			
+											link.appendChild(titleText);
+											negativeContainer.appendChild(link);
+										});
+			
+			                        }else{
+			                            layer.msg(d.msg);
+			                        }
+			                    });
+			                }
+			
+			                // 初始化任务列表
+			                getSelection();
+			
+			                // 绑定搜索事件
+			                form.on('submit(search)', function(data){
+			                    reloadDashboard();
+			                    return false; // 阻止表单默认提交行为
+			                });
+			
+			                // 初始化加载数据
+			                $(document).ready(function() {
+			                    getSelection();
+			                    // 等待下拉框渲染完成后再加载数据
+			                    setTimeout(reloadDashboard, 100); 
+			                });
+			            });
+
+		</script>
+			
+
+	</body>
+</html>

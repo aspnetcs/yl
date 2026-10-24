@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>增加交易明细</title>
+		{% include 'system/common/header.html' %}
+	</head>
+	<body>
+		 <div class="layui-container" style="margin-top: 30px;"> <!-- 添加一个容器，-->
+			<div class="layui-row"> <!-- 添加栅格，8等分，左右偏移2-->
+				<div class="layui-col-lg12">
+					<form class="layui-form layui-form-pane">  <!-- 给容器追加 class="layui-form-pane"，即可显示为方框风格 -->
+					  
+					  <!-- 隐藏域：id -->
+					  <input type="hidden" name="id" id="id"/>
+					  
+					  <div class="layui-form-item">
+					        <label class="layui-form-label">股票编码</label>
+					        <div class="layui-input-block">
+					          <input type="text" name="code" id="code" autocomplete="off" disabled lay-verify="required" class="layui-input">
+					        </div>
+					  </div>
+
+					  <div class="layui-form-item">
+						  <label class="layui-form-label">股票名称</label>
+						  <div class="layui-input-block">
+							  <input type="text" name="name" id="name" autocomplete="off" disabled lay-verify="required" class="layui-input">
+						  </div>			  
+					  </div>
+
+					  <div class="layui-form-item">
+						<label class="layui-form-label">交易时间</label>
+						<div class="layui-input-block">
+							<input type="text" class="layui-input" name="trade_time" id="trade_time" placeholder="yyyy-MM-dd HH:mm:ss">
+						</div>			  
+					  </div>
+					
+					  <div class="layui-form-item">
+						<label class="layui-form-label">交易类型</label>
+						<div class="layui-input-block">
+							<select name="trade_type" id = "trade_type">
+							  <option value=""></option>
+							  <option value="证券买入">证券买入</option>
+							  <option value="证券卖出">证券卖出</option>
+							</select>
+						</div>			  
+					  </div>
+					  
+					  <div class="layui-form-item">
+							<label class="layui-form-label">成交数量</label>
+							<div class="layui-input-block">
+							  <input type="number" lay-affix="number" name="cjsl" id="cjsl" value="0" step="0" lay-verify="required" class="layui-input">
+							</div>
+					  </div>
+
+					  <div class="layui-form-item">
+						  <label class="layui-form-label">成交价格</label>
+						  <div class="layui-input-block">
+							<input type="number" lay-affix="number" name="cjjg" id="cjjg" value="0" step="0.01" lay-verify="required" class="layui-input">
+						  </div>
+					  </div>
+
+					  <div class="layui-form-item">
+					        <label class="layui-form-label">投资策略</label>
+					        <div class="layui-input-block">
+							    <select lay-search=""  name="strategy_id" id="strategy_id" lay-verify="required"></select>
+					        </div>
+					  </div>
+					  
+					  <div class="layui-form-item">
+						  <label class="layui-form-label">涨跌幅阈值</label>
+						  <div class="layui-input-block">
+							<input type="number" lay-affix="number" name="zdf_tg" id="zdf_tg" value="0" step="0.01" lay-verify="required" class="layui-input">
+						  </div>
+					  </div>
+	  
+					  <div class="layui-form-item" style="float: right;">
+						<button class="pear-btn cancel-btn">取消</button>
+						<button class="pear-btn pear-btn-primary" lay-submit lay-filter="editSave">确定</button>
+					  </div>
+					  
+					</form>
+					
+				</div>
+			</div>
+		</div>
+		
+		{% include 'system/common/footer.html' %}
+		<script src="../../../static/layui_exts/customer/customer.js"></script>
+		<script>
+			layui.use(function(){
+
+				let $ = layui.$;
+				let layer = layui.layer;
+				let form = layui.form;
+				let laydate = layui.laydate;
+				
+				//获取当前页面地址参数
+				let obj=getUrlParam();
+				// console.log(obj);
+				
+				// 设置选择框的值
+				document.getElementById('trade_type').value = obj.trade_type;
+				form.render();
+				
+				//获取策略
+				$.getJSON("/strategy/details/strategyList?type=1",function(d){
+					if(d.status==0){
+						
+						let list = d.data.options;
+						// console.log(list);
+						
+						let s='<option value=""></option>';
+						for(let i=0;i<list.length;i++){
+							s+='<option value="'+list[i].value+'">'+list[i].label+'</option>';
+						}
+						// console.log(s);
+						//将拼接好的字符串设置到分类的位置
+						$("#strategy_id").html(s);
+						// 设置选择框的值
+						document.getElementById('strategy_id').value = obj.strategy_id;
+						//重新渲染表单的下拉框
+						form.render('select');  
+					}else{
+						layer.msg(d.msg);
+					}
+				});
+				
+				//表单提交事件
+				form.on("submit(editSave)",function(data){
+					//获取表单提交的数据
+					let field = data.field;
+					// console.log(field);
+					
+					//AJAX向后端发送请求
+					$.ajax({
+						type:"post",
+						url:"/trading/detail/editSave",
+						data:JSON.stringify(field),
+						contentType: 'application/json',
+						dataType:"json",
+						success:function(d){
+							// console.log(d);
+							if(d.status==0){
+								//关闭弹出层
+								let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+								layer.msg(d.msg);
+								parent.layer.close(index); // 再执行关闭
+							}else{
+								//失败
+								layer.msg(d.errors);
+							}
+						}
+					});
+					
+					//阻止表单默认提交
+					return false;
+				});
+				
+				// 取消
+				$('.cancel-btn').on('click', function(){  
+				    // console.log('取消按钮被点击了');  
+				    let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+				    parent.layer.close(index); // 执行关闭
+				  });  
+
+				
+				// 日期时间选择器 - 日期和时间选择器同时显示（全面板）
+				laydate.render({
+					elem: '#trade_time',
+					type: 'datetime',
+					fullPanel: true ,
+					theme: '#00aaff'
+				});
+			
+			});
+			
+		</script>
+			
+		
+	</body>
+</html>

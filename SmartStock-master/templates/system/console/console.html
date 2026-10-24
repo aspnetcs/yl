@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<!-- 响应式布局 -->
+		 <meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>首页</title>
+		<link rel="stylesheet" href="../../../static/layui/css/layui.css" />
+		<link rel="stylesheet" href="../../../static/layui_exts/customer/customer.css" />
+	</head>
+	<body style="background-color: #f7f8fa;">
+			
+		 <!-- 指标卡 -->
+		 <div class="layui-fluid">
+			 <div class="layui-row layui-col-space8" style="padding: 10px;">
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">上证指数</div>
+						   <div class="card-value-text" id='sz_zs'></div>
+						   <div class="card-value_rate-text" id='sz_zdf'></div>
+						 </div>
+				   </div>
+				   
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">深证成指</div>
+						   <div class="card-value-text" id='sc_zs'></div>
+						   <div class="card-value_rate-text" id='sc_zdf'></div>
+						 </div>
+				   </div>
+				   
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">创业板指</div>
+						   <div class="card-value-text" id='cyb_zs'></div>
+						   <div class="card-value_rate-text" id='cyb_zdf'></div>
+						 </div>
+				   </div>
+				   
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">沪深300</div>
+						   <div class="card-value-text" id='hs300_zs'>0</div>
+						   <div class="card-value_rate-text" id='hs300_zdf'></div>
+						 </div>
+				   </div>
+				   
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">恒生指数</div>
+						   <div class="card-value-text" id='hsi_zs'></div>
+						   <div class="card-value_rate-text" id='hsi_zdf'></div>
+						 </div>
+				   </div>
+				   
+				   <div class="layui-col-lg2">
+						 <div class="target-card">
+						   <div class="card-title-text">国企指数</div>
+						   <div class="card-value-text" id='hscei_zs'></div>
+						   <div class="card-value_rate-text" id='hscei_zdf'></div>
+						 </div>
+				   </div> 
+			 </div>
+			 
+			 <!-- 任务趋势 -->
+			 <div class="layui-row layui-col-space8" style="margin-left: 5px;margin-right: 5px;">
+			   
+			   <div class="layui-col-lg6">
+				 <div class="target-card">
+				   <div id="szZs" style="width: 100%;height:350px;">上证指数</div>
+				 </div>
+			   </div>
+			   
+			   <div class="layui-col-lg6">
+				 <div class="target-card">
+				   <div id="szCz" style="width: 100%;height:350px;">深证成指</div>
+				 </div>
+			   </div>
+			   
+			 </div>
+			 
+			 <!-- 任务类型 -->
+			 <div class="layui-row layui-col-space8" style="padding: 10px;">
+			   <div class="layui-col-lg4">
+				 <div class="target-card">
+				   <div id="hyBk" style="width: 100%;height:300px;">行业板块</div>
+				 </div>
+			   </div>
+			   <div class="layui-col-lg4">
+				 <div class="layui-card" style="height:300px;">
+				   <div class="layui-card-header" style="font-size: 18px;color: #161718;font-weight: bold;">财经快讯</div>
+				   <div id="articleList" style="width: 100%; height: 240px; margin-left: 5px; overflow-y: auto;"></div>
+				 </div>
+				 
+			   </div>
+			   <div class="layui-col-lg4">
+					 <div class="layui-card" style="height:300px;">
+					   <div class="layui-card-header" style="font-size: 18px;color: #161718;font-weight: bold;">个股新闻</div>
+					   <div id="stocksNews" style="width: 100%; height: 240px; margin-left: 5px; overflow-y: auto;"></div>
+					 </div>
+			   </div>
+			 </div>
+		 
+		 </div>
+		
+		<!-- 引入 layui.js -->
+		<script src="../../../static/layui/layui.js"></script>
+		<script src="../../../static/layui_exts/echarts/echarts.min.js"></script></script>
+		<script src="../../../static/layui_exts/echarts/walden.js"></script></script>
+		<script src="../../../static/layui_exts/customer/customer.js"></script></script>
+		
+		<script>
+			layui.use(function(){
+				let $ = layui.$;
+				
+				// 修改字体颜色
+				function changeValueColor(value,elementId){
+					if (value > 0) {
+					    // 如果value大于0，设置字体颜色为红色
+					    document.getElementById(elementId).style.color = 'red';
+					} else if(value < 0){
+					    // 如果value小于0，设置字体颜色为绿色
+					    document.getElementById(elementId).style.color = 'green';
+					}
+				}
+				
+				//指标卡
+				$.getJSON("/home/target",function(d){
+					if(d.status==0){
+						let data = d.data;
+						// console.log(data);
+						$("#sz_zs").text(data.sz_zs);
+						$("#sz_zdf").text(data.sz_zdf + '%');
+						changeValueColor(data.sz_zdf,'sz_zs');
+						changeValueColor(data.sz_zdf,'sz_zdf');
+						
+						$("#sc_zs").text(data.sc_zs);
+						$("#sc_zdf").text(data.sc_zdf + '%');
+						changeValueColor(data.sc_zdf,'sc_zs');
+						changeValueColor(data.sc_zdf,'sc_zdf');
+						
+						$("#cyb_zs").text(data.cyb_zs);
+						$("#cyb_zdf").text(data.cyb_zdf + '%');
+						changeValueColor(data.cyb_zdf,'cyb_zs');
+						changeValueColor(data.cyb_zdf,'cyb_zdf');
+						
+						$("#hs300_zs").text(data.hs300_zs);
+						$("#hs300_zdf").text(data.hs300_zdf + '%');
+						changeValueColor(data.hs300_zdf,'hs300_zs');
+						changeValueColor(data.hs300_zdf,'hs300_zdf');
+						
+						$("#hsi_zs").text(data.hsi_zs);
+						$("#hsi_zdf").text(data.hsi_zdf + '%');
+						changeValueColor(data.hsi_zdf,'hsi_zs');
+						changeValueColor(data.hsi_zdf,'hsi_zdf');
+						
+						$("#hscei_zs").text(data.hscei_zs);
+						$("#hscei_zdf").text(data.hscei_zdf + '%');
+						changeValueColor(data.hscei_zdf,'hscei_zs');
+						changeValueColor(data.hscei_zdf,'hscei_zdf');
+
+					}else{
+						layer.msg(d.msg);
+					}
+				});
+				
+				// 财经快讯
+				$.ajax({
+					url: '/home/globalNews',
+					type: 'GET',
+					dataType: 'json',
+					success: function(data) {
+						let articles = data.data.rows
+
+						// 获取文章列表的容器
+						let articleListContainer = document.getElementById("articleList");
+					   
+						// 遍历文章数组并创建HTML元素
+						articles.forEach(function(article) {
+							// 创建一个链接元素
+							let link = document.createElement("a");
+							link.href = article.url;
+							link.target = "_blank";
+							link.className = "article-title";
+
+							// 创建文章标题的文本节点
+							let titleText = document.createTextNode(article.title);
+							// 如果文章是hot，则创建一个hot图标元素
+							if (article.is_hot===1) {
+							  let hotIcon = document.createElement("span");
+							  hotIcon.className = "hot-icon";
+							  hotIcon.textContent = "HOT";
+							  // 在添加标题文本之前先添加hot图标
+							  link.appendChild(hotIcon);
+							}
+						   
+							// 将文章标题的文本节点添加到链接元素中
+							link.appendChild(titleText);
+						   
+							// 将链接元素添加到文章列表的容器中
+							articleListContainer.appendChild(link);
+						   
+						  });
+					  
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+					  console.error('Error fetching article data:', textStatus, errorThrown);
+					}
+				  });
+				  
+				  
+				  // 个股新闻
+				  $.ajax({
+				  	url: '/home/stocksNews',
+				  	type: 'GET',
+				  	dataType: 'json',
+				  	success: function(data) {
+				  		let articles = data.data.rows
+						
+				  		// 获取文章列表的容器
+				  		let articleListContainer = document.getElementById("stocksNews");
+				  	   
+				  		// 遍历文章数组并创建HTML元素
+				  		articles.forEach(function(article) {
+				  			// 创建一个链接元素
+				  			let link = document.createElement("a");
+				  			link.href = article.url;
+				  			link.target = "_blank";
+				  			link.className = "article-title";
+				  
+				  			// 创建文章标题的文本节点
+				  			let titleText = document.createTextNode(article.title);
+
+				  			// 将文章标题的文本节点添加到链接元素中
+				  			link.appendChild(titleText);
+				  		   
+				  			// 将链接元素添加到文章列表的容器中
+				  			articleListContainer.appendChild(link);
+				  		   
+				  		  });
+				  	  
+				  	},
+				  	error: function(jqXHR, textStatus, errorThrown) {
+				  	  console.error('Error fetching article data:', textStatus, errorThrown);
+				  	}
+				    });
+		
+				
+				//行业板块
+				$.getJSON("/home/hyBk",function(d){
+					if(d.status==0){
+						let data = d.data;
+						// console.log(data);
+						let dateline = echarts.init(document.getElementById('hyBk'));
+						let option = {
+							title: {
+								text: '行业板块',
+								textStyle: {  
+								            color: '#2c2d2f', // 红色标题  
+								            fontSize: 18, // 字体大小  
+								            fontWeight: 'bold' // 字体粗细  
+								        }
+							},
+							tooltip: {
+								trigger: 'axis'
+							},
+							xAxis: {
+								type: 'category',
+								data: data.name
+							},
+							yAxis: {
+								type: 'value'  
+							},
+							series: [{
+								name: '涨跌幅',
+								type: 'bar',	
+								data: data.rqs,
+								barWidth: 40 ,// 柱状粗细
+								itemStyle: {  
+								            color: '#ff0000' // 所有柱子的颜色都设置为红色  
+								        } ,
+								label: {  
+								        show: true, // 显示标签  
+								        position: 'inside', // 标签位置  
+								        color: '#fcfcfc' ,// 标签颜色  
+										formatter: function(params) {
+										                // 自定义标签格式
+														let labelValue = (params.value).toFixed(2) + '%'
+										                return labelValue;
+										            }
+								    }
+							}]
+						};
+						dateline.setOption(option);
+				
+					}else{
+						layer.msg(d.msg);
+					}
+				});
+				
+				//上证指数
+				$.getJSON("/home/szZs",function(d){
+					if(d.status==0){
+						let data = d.data;
+						var myChart = echarts.init(document.getElementById('szZs'));
+						
+						kLineChart(data,'上证指数')
+						 
+						myChart.setOption(option); // 应用配置项到图表上。
+				
+					}else{
+						layer.msg(d.msg);
+					}
+				});
+				
+				//深证成指
+				$.getJSON("/home/szCz",function(d){
+					if(d.status==0){
+						let data = d.data;
+						var myChart = echarts.init(document.getElementById('szCz'));
+						
+						kLineChart(data,'深证成指')
+						 
+						myChart.setOption(option); // 应用配置项到图表上。
+				
+					}else{
+						layer.msg(d.msg);
+					}
+				});
+
+			})
+
+		</script>
+			
+
+	</body>
+</html>

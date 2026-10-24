@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>编辑</title>
+		{% include 'system/common/header.html' %}
+	</head>
+	<body>
+		 <div class="layui-container" style="margin-top: 30px;"> <!-- 添加一个容器，-->
+		 	<div class="layui-row"> <!-- 添加栅格，8等分，左右偏移2-->
+		 		<div class="layui-col-md8 layui-col-md-offset2">
+		 			<form class="layui-form layui-form-pane">  <!-- 给容器追加 class="layui-form-pane"，即可显示为方框风格 -->
+					
+					 <!-- 隐藏域 -->
+					 <input type="hidden" name="id" id="id"/>
+		 			  
+		 			 <div class="layui-form-item">
+		 			       <label class="layui-form-label">编码</label>
+		 			       <div class="layui-input-block">
+		 			         <input type="text" name="code" id="code" autocomplete="off" disabled placeholder="股票编码" lay-verify="required" class="layui-input">
+		 			       </div>
+		 			 </div>
+		 			 
+		 			  <div class="layui-form-item">
+		 			        <label class="layui-form-label">名称</label>
+		 			        <div class="layui-input-block">
+		 			          <input type="text" name="name" id="name" autocomplete="off" disabled placeholder="股票名称" lay-verify="required" class="layui-input">
+		 			        </div>
+		 			  </div>
+		 			  
+		 			  <div class="layui-form-item">
+		 			        <label class="layui-form-label">分组</label>
+		 			        <div class="layui-input-block">
+		 					  <div name="group_id" id="group_id" class="xm-select-demo"></div>
+		 			        </div>
+		 			  </div>
+		 			  
+		 			  <div class="layui-form-item">
+		 			        <label class="layui-form-label">类型</label>
+		 			        <div class="layui-input-block">
+		 			          <select lay-search=""  name="stock_type" id="stock_type" lay-filter="stock_type">
+		 						  <option value="0">请选择</option>
+		 						  <option value="1">股票</option>
+		 						  <option value="2">基金</option>
+		 					  </select>
+		 			        </div>
+		 			  </div>
+					  
+					  <div class="layui-form-item">
+					    <label class="layui-form-label">总投入预算</label>
+							<div class="layui-input-block">
+								<input type="number" lay-affix="number" name="total_invest_budget" value="0" id="total_invest_budget" step="0" lay-verify="required" class="layui-input">
+							</div>
+					  </div>
+					  
+					  <div class="layui-form-item">
+					    <label class="layui-form-label">目标收益率</label>
+							<div class="layui-input-block">
+								<input type="number" lay-affix="number" name="income_rate_target" value="0" id="income_rate_target" step="0.01" lay-verify="required" class="layui-input">
+							</div>
+					  </div>
+		 			  
+		 			  <div class="layui-form-item" pane>
+		 			    <label class="layui-form-label">是否持仓</label>
+		 			    <div class="layui-input-block" id="is_hold"></div>
+		 			  </div>
+					  
+					  <div class="layui-form-item" id="display1" pane>
+					    <label class="layui-form-label">成本价</label>
+						<div class="layui-input-block">
+							<input type="number" lay-affix="number" name="cost_price" id="cost_price" step="0.001" class="layui-input">
+						</div>
+					  </div>
+					  
+					  <div class="layui-form-item" id="display2" pane>
+					    <label class="layui-form-label">持股数</label>
+							<div class="layui-input-block">
+								<input type="number" lay-affix="number" name="hold_number" id="hold_number" step="100" class="layui-input">
+							</div>
+					  </div>
+					  
+					  <div class="layui-form-item" pane>
+					    <label class="layui-form-label">关注新闻</label>
+					    <div class="layui-input-block" id="is_news"></div>
+					  </div>
+		 
+		 			  <div class="layui-form-item" style="float: right;">
+		 				<button class="pear-btn cancel-btn">取消</button>
+		 				<button class="pear-btn pear-btn-primary" lay-submit lay-filter="editSave">确定</button>
+		 			  </div>
+		 			  
+		 			</form>
+		 			
+		 		</div>
+		 	</div>
+		 </div>
+		
+		{% include 'system/common/footer.html' %}
+		<script src="../../../static/layui_exts/xm-select.js"></script>
+		<script src="../../../static/layui_exts/customer/customer.js"></script>
+		<script>
+			layui.use(function(){
+
+				let $ = layui.$;
+				let layer = layui.layer;
+				let form = layui.form;
+				
+				form.on('radio(radio-filter)', function(data){
+					let elem = data.elem;
+				    let value = elem.value; // 获得 radio 值
+					// console.log(value);
+				
+					if (value=='0'){
+						$('#display1').hide(); 
+						$('#display2').hide(); 
+					}else{
+						$('#display1').show(); 
+						$('#display2').show();
+					}
+				  });
+				
+				//获取当前页面地址参数
+				let obj=getUrlParam();
+				// console.log(obj);
+				
+				//是否持仓
+				let str='';
+				if(obj.is_hold==1){
+					str+='<input type="radio" name="is_hold" value="1" title="是" lay-filter="radio-filter" checked>';
+					str+='<input type="radio" name="is_hold" value="0" title="否" lay-filter="radio-filter" >';
+				}else{
+					$('#display1').hide();
+					$('#display2').hide(); 
+					str+='<input type="radio" name="is_hold" value="1" title="是" lay-filter="radio-filter">';
+					str+='<input type="radio" name="is_hold" value="0" title="否" lay-filter="radio-filter" checked>';
+				}
+				//将拼接好的单选框设置到指定位置
+				$("#is_hold").html(str);
+				//重新渲染
+				 form.render('radio');
+				
+				// 是否关注新闻
+				let str1='';
+				if(obj.is_news==1){
+					str1+='<input type="radio" name="is_news" value="1" title="是" lay-filter="radio-filter1" checked>';
+					str1+='<input type="radio" name="is_news" value="0" title="否" lay-filter="radio-filter1" >';
+				}else{
+					str1+='<input type="radio" name="is_news" value="1" title="是" lay-filter="radio-filter1">';
+					str1+='<input type="radio" name="is_news" value="0" title="否" lay-filter="radio-filter1" checked>';
+				}
+				//将拼接好的单选框设置到指定位置
+				$("#is_news").html(str1);
+				//重新渲染
+				 form.render('radio');
+				 
+				// 设置选择框的值
+				document.getElementById('stock_type').value = obj.stock_type;
+				form.render();
+				
+				//获取归属分组
+				$.getJSON("/stock/group/belong_project",function(d){
+					// console.log(d);
+					if(d.status==0){
+						
+						//sm-select下拉框
+						var demo2 = xmSelect.render({
+							el: '#group_id', 
+							model: { label: { type: 'text' } },
+							tree: {
+									show: true,
+									strict: false,
+									expandedKeys: true
+								},
+							prop: {
+								name: 'title',
+								value: 'id',
+							},
+							name: 'title',
+							filterable: true,
+							// radio: true, //单选
+							theme: {
+								color: '#009fef',
+							},
+							data: d.data,
+							on: function(data){
+									if(data.isAdd){
+										return data.change.slice(0, 1)
+									}
+								}
+						});
+						
+						//回显
+						if (obj.group_id===0){
+							// console.log(group_id);
+							demo2.setValue('');
+						}else{
+							// console.log(group_id);
+							demo2.setValue([obj.group_id]);
+						}
+						
+					}else{
+						layer.msg(d.msg)
+					}
+				});
+				
+				//表单提交事件
+				form.on("submit(editSave)",function(data){
+					//获取表单提交的数据
+					let field = data.field;
+					let group_id = xmSelect.get('#group_id', true).getValue('valueStr'); // 获取归属分组
+					field.group_id = group_id; 
+					// console.log(field);
+					
+					//AJAX向后端发送请求
+					$.ajax({
+						type:"put",
+						url:"/stock/selected/editSave",
+						data:JSON.stringify(field),
+						contentType: 'application/json',
+						dataType:"json",
+						success:function(d){
+							// console.log(d);
+							if(d.status==0){
+								//关闭弹出层
+								let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+								parent.layer.close(index); // 再执行关闭
+								layer.msg(d.msg);
+							}else{
+								//失败
+								layer.msg(d.errors);
+							}
+						}
+					});
+					
+					//阻止表单默认提交
+					return false;
+				});
+				
+				// 取消
+				$('.cancel-btn').on('click', function(){  
+				    // console.log('取消按钮被点击了');  
+				    let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+				    parent.layer.close(index); // 执行关闭
+					
+					//阻止表单默认提交
+					return false;
+				  });  
+			
+				});
+
+		</script>
+			
+		
+	</body>
+</html>

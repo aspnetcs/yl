@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<!-- 响应式布局 -->
+		 <meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>量化选股</title>
+		{% include 'system/common/header.html' %}
+		<link rel="stylesheet" href="../../../static/layui_exts/customer/customer.css" />
+	</head>
+	<body class="pear-container">
+		
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<form class="layui-form" action="">
+					<div class="layui-form-item">
+						
+						<!-- 隐藏域 -->
+						<div id="filterData" data-filter='{{ filterData | tojson | safe }}' style="display: none;"></div>
+						<input type="text" id="id" name="id" value="{{ id }}" style="display: none;">
+						<input type="text" id="quantifyName" name="quantifyName" value="{{ quantifyName }}" style="display: none;">
+						<input type="text" id="quantifyMark" name="quantifyMark" value="{{ quantifyMark }}" style="display: none;">
+
+						<div class="layui-inline" style="float: left;">
+						        <label class="layui-form-label" style="width: 60px;">名称</label>
+						        <div class="layui-input-inline" style="width: 180px;">
+						            <input type="text" name="name" value="{{ filterData.name }}" placeholder="名称" class="layui-input" lay-affix="clear">
+						        </div>
+						</div>
+						<div class="layui-inline" style="float: left;">
+						        <label class="layui-form-label" style="width: 60px;">行业</label>
+						        <div class="layui-input-inline" style="width: 180px;">
+						            <input type="text" name="schy" value="{{ filterData.schy }}" placeholder="行业" class="layui-input" lay-affix="clear">
+						        </div>
+						</div>
+						
+						<!-- 市值区间 -->
+						<label class="layui-form-label">总市值(亿)</label>
+						<div class="layui-input-inline">
+						    <input type="number" name="zszMin"   value="{{ filterData.zszMin }}" lay-verify="number" placeholder="最小值" class="layui-input">
+						</div>
+						<span class="layui-form-mid">-</span>
+						<div class="layui-input-inline">
+						    <input type="number" name="zszMax"  value="{{ filterData.zszMax }}" lay-verify="number" placeholder="最大值" class="layui-input">
+						</div>
+						
+						<!-- 市盈率 -->
+						<label class="layui-form-label">市盈率</label>
+						<div class="layui-input-inline">
+						    <input type="number" name="sylMin"  value="{{ filterData.sylMin }}" lay-verify="number" placeholder="最小值" class="layui-input">
+						</div>
+						<span class="layui-form-mid">-</span>
+						<div class="layui-input-inline">
+						    <input type="number" name="sylMax" value="{{ filterData.sylMax }}" lay-verify="number" placeholder="最大值" class="layui-input">
+						</div>
+					</div>
+					
+					<div class="layui-form-item">
+						
+						<!-- 市净率 -->
+						<label class="layui-form-label">市净率</label>
+						<div class="layui-input-inline">
+						    <input type="number" name="sjlMin" value="{{ filterData.sjlMin }}"  lay-verify="number" placeholder="最小值" class="layui-input">
+						</div>
+						<span class="layui-form-mid">-</span>
+						<div class="layui-input-inline">
+						    <input type="number" name="sjlMin" value="{{ filterData.sjlMin }}" lay-verify="number" placeholder="最大值" class="layui-input">
+						</div>
+						
+						<!-- 当前价 -->
+						<label class="layui-form-label">当前价</label>
+						<div class="layui-input-inline">
+						    <input type="number" name="zxjMin" value="{{ filterData.zxjMin }}"  lay-verify="number" placeholder="最小值" class="layui-input">
+						</div>
+						<span class="layui-form-mid">-</span>
+						<div class="layui-input-inline">
+						    <input type="number" name="zxjMax" value="{{ filterData.zxjMax }}" lay-verify="number" placeholder="最大值" class="layui-input">
+						</div>
+						
+						<!-- 每股收益 -->
+						<label class="layui-form-label">每股收益</label>
+						<div class="layui-input-inline">
+						    <input type="number" name="mgsyMin"  value="{{ filterData.mgsyMin }}" lay-verify="number" placeholder="最小值" class="layui-input">
+						</div>
+						<span class="layui-form-mid">-</span>
+						<div class="layui-input-inline">
+						    <input type="number" name="mgsyMax" value="{{ filterData.mgsyMax }}" lay-verify="number" placeholder="最大值" class="layui-input">
+						</div>
+						
+					</div>
+					
+					<div class="layui-form-item">
+						
+						<!-- 营收 -->
+						<label class="layui-form-label">营收(亿)</label>
+						<div class="layui-input-inline">
+						    <input type="number" name="yysrMin" value="{{ filterData.yysrMin }}"  lay-verify="number" placeholder="最小值" class="layui-input">
+						</div>
+						<span class="layui-form-mid">-</span>
+						<div class="layui-input-inline">
+						    <input type="number" name="yysrMax" value="{{ filterData.yysrMax }}" lay-verify="number" placeholder="最大值" class="layui-input">
+						</div>
+						
+						<!-- 营收同比 -->
+						<label class="layui-form-label">营收同比%</label>
+						<div class="layui-input-inline">
+						    <input type="number" name="yysr_tbzzMin" value="{{ filterData.yysr_tbzzMin }}"  lay-verify="number" placeholder="最小值" class="layui-input">
+						</div>
+						<span class="layui-form-mid">-</span>
+						<div class="layui-input-inline">
+						    <input type="number" name="yysr_tbzzMax" value="{{ filterData.yysr_tbzzMax }}" lay-verify="number" placeholder="最大值" class="layui-input">
+						</div>
+						
+						<!-- 净利润 -->
+						<label class="layui-form-label">净利润(亿)</label>
+						<div class="layui-input-inline">
+						    <input type="number" name="jlrMin" value="{{ filterData.jlrMin }}"  lay-verify="number" placeholder="最小值" class="layui-input">
+						</div>
+						<span class="layui-form-mid">-</span>
+						<div class="layui-input-inline">
+						    <input type="number" name="jlrMax" value="{{ filterData.jlrMax }}" lay-verify="number" placeholder="最大值" class="layui-input">
+						</div>
+						
+					</div>
+					
+					<div class="layui-form-item">
+						
+						<!-- 净利润增长 -->
+						<label class="layui-form-label">净利润增长%</label>
+						<div class="layui-input-inline">
+						    <input type="number" name="jlr_tbzzMin"  value="{{ filterData.jlr_tbzzMin }}" lay-verify="number" placeholder="最小值" class="layui-input">
+						</div>
+						<span class="layui-form-mid">-</span>
+						<div class="layui-input-inline">
+						    <input type="number" name="jlr_tbzzMax" value="{{ filterData.jlr_tbzzMax }}" lay-verify="number" placeholder="最大值" class="layui-input">
+						</div>
+						
+						<!-- 每股净资产 -->
+						<label class="layui-form-label">每股净资产</label>
+						<div class="layui-input-inline">
+						    <input type="number" name="mgjzcMin"  value="{{ filterData.mgjzcMin }}" lay-verify="number" placeholder="最小值" class="layui-input">
+						</div>
+						<span class="layui-form-mid">-</span>
+						<div class="layui-input-inline">
+						    <input type="number" name="mgjzcMax" value="{{ filterData.mgjzcMax }}" lay-verify="number" placeholder="最大值" class="layui-input">
+						</div>
+						
+						<!-- 净资产收益率 -->
+						<label class="layui-form-label">净资产收益率</label>
+						<div class="layui-input-inline">
+						    <input type="number" name="jzcsylMin"  value="{{ filterData.jzcsylMin }}" lay-verify="number" placeholder="最小值" class="layui-input">
+						</div>
+						<span class="layui-form-mid">-</span>
+						<div class="layui-input-inline">
+						    <input type="number" name="jzcsylMax" value="{{ filterData.jzcsylMax }}" lay-verify="number" placeholder="最大值" class="layui-input">
+						</div>
+						
+					</div>
+						
+					<div class="layui-form-item">
+						<div class="layui-input-block layui-form-right" style="float: right;">
+							<button class="layui-btn layui-bg-blue" lay-submit lay-filter="search"><i class="layui-icon layui-icon-search">搜索</i></button>
+							<button class="layui-btn" lay-submit lay-filter="save"><i class="layui-icon layui-icon-star"></i>保存</button>
+							<button type="reset" id="reset" class="pear-btn">清空</button>
+						</div>
+					</div>
+					
+					</div>
+
+				  
+				</form>
+				
+		</div>
+		
+		<div class="layui-row" style="margin-left: 2px;margin-right: 2px;margin-bottom: 15px;">
+			<div class="layui-col-lg6">
+				 <div class="target-card" style="margin-right: 5px;">
+				   <div id="pieChart" style="width: 90%;height:350px;">行业分布</div>
+				 </div>
+			</div>
+		   <div class="layui-col-lg6">
+				 <div class="target-card" style="margin-left: 5px;">
+				   <div id="barChart" style="width: 90%;height:350px;">净利润</div>
+				 </div>
+		   </div>
+		</div>
+		
+		<!-- 数据表格 -->
+		<div class="layui-card">
+		    <div class="layui-card-body">
+		        <table class="layui-hide" id="quantify" lay-filter="quantify"></table>
+		    </div>
+		</div>
+		
+		<label id="updateTime" style="text-align: left; display: block; width: 100%; color: gray;">股票数据更新时间：{{updateTime}}</label>
+		
+		<!-- 引入 layui.js -->
+		{% include 'system/common/footer.html' %}
+		<script src="../../../static/layui_exts/echarts/echarts.min.js"></script></script>
+		<script src="../../../static/layui_exts/echarts/walden.js"></script></script>
+		
+		<script>
+			layui.use(function(){
+				// 获取table组件的对象
+				let table = layui.table;
+				let $ = layui.$;
+				let layer = layui.layer;
+				let form = layui.form;
+				
+				// 从隐藏域中获取
+				let backData = JSON.parse($('#filterData').attr('data-filter'));
+				// console.log(backData);
+
+				// 初始化图形
+				function initChart(data){
+						$.ajax({
+								url: "/quantify/selection/list",
+								method: "GET", 
+								data: data,
+								success: function(response){
+									// 存储返回的数据
+									sharedData = response;
+						 
+									// 初始化表格
+									initTable(data);
+						 
+									// 初始化饼图
+									initPieChart(sharedData);
+									
+									// 初始化柱状图
+									initBarChart(sharedData);
+								},
+								error: function(xhr, status, error){
+									layer.msg('数据加载失败：' + error, {icon: 2});
+								}
+						});
+				}
+				initChart(backData)
+				
+				function initBarChart(data){
+					// 获取ECharts
+					let chartDom = document.getElementById('barChart');
+					let myChart = echarts.init(chartDom);
+					
+					// 根据数据格式设置饼图的配置项
+					option = {
+							title: {
+								text: '市值排名(亿)',
+								textStyle: {
+								            color: '#161718', // 红色标题  
+								            fontSize: 18, // 字体大小  
+								            fontWeight: 'bold' // 字体粗细  
+								        }
+							},
+							tooltip: {
+								trigger: 'axis'
+							},
+							xAxis: {
+								type: 'category',
+								data: data.data.zsz.name
+							},
+							yAxis: {
+								type: 'value'  
+							},
+							series: [{
+								name: '总市值',
+								type: 'bar',
+								data: data.data.zsz.zsz,
+								barWidth: 40 ,// 柱状粗细
+								itemStyle: {  
+								            color: '#1E9FFF' // 柱子颜色
+								        } ,
+								label: {  
+								        show: true, // 显示标签  
+								        position: 'outside', // 标签位置  
+								        color: '#818181' // 标签颜色  
+								    }  
+							}]
+						};
+									
+					myChart.setOption(option);
+					
+				}
+				
+				function initPieChart(data){
+				    // 获取ECharts
+				    let chartDom = document.getElementById('pieChart');
+				    let myChart = echarts.init(chartDom);
+				
+				    // 根据数据格式设置饼图的配置项
+				    option = {
+				      title: {
+				        text: '行业分布',
+				        textStyle: {
+				                    color: '#161718', // 红色标题  
+				                    fontSize: 18, // 字体大小  
+				                    fontWeight: 'bold' // 字体粗细  
+				                }
+				      },
+				      tooltip: {
+				        trigger: 'item'
+				      },
+				      series: [
+				        {
+				          name: '行业',
+				          type: 'pie',
+				          radius: '50%',
+				          itemStyle: {
+				            borderRadius: 5
+				          },
+						  label: {
+						          show: true, // 显示标签  
+						          position: 'outside', // 标签位置  
+						          color: '#737373' ,// 标签颜色  
+						          formatter: '{b}: {c}' // 这里的 {b} 是数据项名称，{c} 是数据值 
+						      },
+						  labelLine: {
+						    show: true
+						  },
+				          data: data.data.hy
+				        }
+				      ]
+				    };
+				
+				    myChart.setOption(option);
+				}
+				
+				function initTable(data){
+					// console.log(data)
+					table.reload('quantify', {
+					  page: {
+					    curr: 1 // 重新从第 1 页开始
+					  },
+					  where: data // 搜索的字段
+					});
+				}
+				
+				// 保存
+				form.on('submit(save)', function(data){
+					// 保存逻辑
+					let filter = JSON.stringify(data.field);
+					// console.log(filter);
+					let id = $("#id").val()
+					let quantifyName = $("#quantifyName").val()
+					let quantifyMark = $("#quantifyMark").val()
+					
+					layer.open({
+						title:"保存条件",
+						type: 2,  //2 iframe 内联框架层，可同时存在多个层
+						content:'/quantify/selection/edit', 
+						area:['500px','500px'],
+						closeBtn:1,
+						end: function(){
+							// layer.msg("保存成功");
+						},
+						success: function(layero, index, that){
+						   //获取弹出层的JQuery对象
+						   let body = layer.getChildFrame('body', index);
+						   // console.log(obj.data);
+						   // 给 iframe 页中的某个输入框赋值
+						   body.find('#filter').val(filter);
+						   body.find('#id').val(id);
+						   body.find('#name').val(quantifyName);
+						   body.find('#mark').val(quantifyMark);
+						}
+					});
+
+					return false; // 阻止表单默认提交
+				});
+				
+				// 搜索
+				form.on('submit(search)', function(data){
+				    let field = data.field; // 获得表单字段
+					console.log(field);
+					
+					// 重载图形
+					initChart(field);
+
+				    // 重载表格
+				    // table.reload('quantify', {
+				    //   page: {
+				    //     curr: 1 // 重新从第 1 页开始
+				    //   },
+				    //   where: field // 搜索的字段
+				    // });
+					initTable(field)
+
+					return false; // 阻止默认 form 跳转
+
+				});
+
+				//单元格事件处理
+				table.on('tool(quantify)',function(obj){
+					// console.log(obj); //前端打印obj
+					let event = obj.event;
+					if(event=='del'){
+						layer.confirm('确定删除?',{btn:['确定','取消']},function(index){
+							// 获取当前行id
+							let code = obj.data.code;
+							//AJAX调用,用let $ = layui.$引入jquery，调用删除接口，第一个参数是的接口地址，第二个参数是请求参数，第三个是回调函数
+							$.getJSON("/quantify/selection/del",{code:code},function(d){
+								// console.log(d);
+								if(d.status==0){
+									//删除成功,表格数据刷新
+									layer.msg(d.msg);
+									table.reload("quantify")
+								}else{
+									layer.msg(d.msg);
+								}
+							});
+							//关闭提示框
+							layer.close(index);
+						});
+					}else if(event=='addBtn'){
+						//添加事件
+						layer.open({
+							title:"添加自选",
+							type: 2,  //2 iframe 内联框架层，可同时存在多个层
+							content:'/quantify/selection/add', 
+							area:['500px','500px'],
+							closeBtn:1,
+							end: function(){
+							    //刷新表格
+								table.reload("quantify")
+							},
+							success: function(layero, index, that){
+							   //获取弹出层的JQuery对象
+							   let body = layer.getChildFrame('body', index);
+							   // console.log(obj.data);
+							   // 给 iframe 页中的某个输入框赋值
+							   body.find('#code').val(obj.data.code);
+							   body.find('#name').val(obj.data.name);
+							}
+						});
+					}
+				});
+				
+				//调用对象中的函数进行表格生成
+				table.render({
+					elem:"#quantify",
+					url:"/quantify/selection/list",
+					page: {
+						limit:10,
+						limits:[5,10,15,20],
+						prev:"上一页",
+						next:"下一页",
+						groups:10,
+						theme: '#1E9FFF'
+					},
+					skin: 'line',
+					request: {
+					  pageName: 'pageNo',
+					  limitName: 'pageSize'
+					},
+					parseData: function(res){
+						// console.log(res)
+						return {
+							"code": res.status, // 解析接口状态
+							"msg": res.msg, // 解析提示文本
+							"count": res.data.count, // 解析数据长度
+							"data": res.data.rows // 解析数据列表
+						}
+					},
+					toolbar:false,
+					cols:[[
+						{
+							title:"所处行业",
+							field:"schy",
+							align:"center",
+						    style: 'font-size: 15px',
+							width: 100
+						},
+						{
+							title:"编码",
+							field:"code",
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"名称",
+							field:"name",
+							align:"center",
+                            style: 'font-size: 15px',
+							width: 100
+						},
+						{
+							title:"昨日价",
+							field:"zxj",
+							align:"center",
+                            style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"市盈率-动态",
+							field:"syl_dt",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"市净率",
+							field:"sjl",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"总市值(亿)",
+							field:"zsz",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"60日涨跌幅",
+							field:"zdf_60d",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"年初-今涨跌幅",
+							field:"zdf_nzj",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"每股收益",
+							field:"mgsy",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"营收(亿)",
+							field:"yysr_yysr",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"营收同比",
+							field:"yysr_tbzz",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"净利润(亿)",
+							field:"jlr_jlr",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"净利润同比",
+							field:"jlr_tbzz",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"每股净资产",
+							field:"mgjzc",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"净资产收益率",
+							field:"jzcsyl",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"每股经营现金流量",
+							field:"mgjyxjll",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"销售毛利率",
+							field:"xsmll",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"财报周期",
+							field:"report_date",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"加自选",
+							templet:function(d){
+								if (d.is_selected==0){
+									s='<button type="button" lay-event="addBtn" class="layui-btn layui-btn-sm layui-bg-blue"><i class="layui-icon layui-icon-add-1"></i></button>'
+								}else{
+									s='<button type="button" lay-event="del" class="layui-btn layui-btn-sm layui-bg-red"><i class="layui-icon layui-icon-subtraction"></i></button>'
+								}
+								return s;
+							},
+							align:"center",
+                            style: 'font-size: 10px'
+						}
+					]]
+				});
+
+			})
+		</script>
+			
+		
+		
+	</body>
+</html>

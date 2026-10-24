@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智投工匠</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        p {
+            margin: 10px 0;
+            color: #666;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #d9534f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>股票【卖出】通知</h1>
+        <p>尊敬的投资者：</p>
+        <p>根据您的投资策略【{{strategy_id}}{{strategy_name}}】，提醒您卖出{{name}}，具体卖出建议如下：</p>
+        <p>
+            <strong>股票编码：</strong> <span class="highlight">{{code}}</span><br>
+            <strong>股票名称：</strong> <span class="highlight">{{name}}</span><br>
+            <strong>最新价格：</strong> <span class="highlight">{{zxj}}</span><br>
+            <strong>当前持仓量：</strong> <span class="highlight">{{hold_number}}</span><br>
+			<strong>当前持仓价：</strong> <span class="highlight">{{cost_price}}</span> <br>
+			<strong>当前收益率：</strong> <span class="highlight">{{income_rate}}</span> <br>
+			<br>
+			-----------------------------------------------------------------------------------------------------
+			<br>
+			<strong>建议卖出股数：</strong> <span class="highlight">{{hold_number}}</span><br>
+			<strong>建议卖出总额：</strong> <span class="highlight">{{suggest_sale_amt}}</span><br>
+            <strong>卖出后收益</strong> <span class="highlight">{{income_amt}}</span><br>
+        </p>
+        <p>
+            请定期检查您的投资组合，并根据市场情况做出适当调整。如有任何疑问或需要进一步的帮助，请随时联系我们的客服团队。
+        </p>
+        <p>
+            祝您投资顺利！
+        </p>
+        <p>
+            此致<br>
+            敬礼
+        </p>
+        <p>
+            <em>注：本邮件为自动发送，请勿回复。</em>
+        </p>
+    </div>
+</body>
+</html>

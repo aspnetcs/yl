@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>添加自选</title>
+		{% include 'system/common/header.html' %}
+	</head>
+	<body>
+		 <div class="layui-container" style="margin-top: 30px;"> <!-- 添加一个容器，-->
+			<div class="layui-row"> <!-- 添加栅格，8等分，左右偏移2-->
+				<div class="layui-col-md8 layui-col-md-offset2">
+					<form class="layui-form layui-form-pane">  <!-- 给容器追加 class="layui-form-pane"，即可显示为方框风格 -->
+					  
+					 <div class="layui-form-item">
+					       <label class="layui-form-label">编码</label>
+					       <div class="layui-input-block">
+					         <input type="text" name="code" id="code" autocomplete="off" disabled placeholder="股票编码" lay-verify="required" class="layui-input">
+					       </div>
+					 </div>
+					 
+					  <div class="layui-form-item">
+					        <label class="layui-form-label">名称</label>
+					        <div class="layui-input-block">
+					          <input type="text" name="name" id="name" autocomplete="off" disabled placeholder="股票名称" lay-verify="required" class="layui-input">
+					        </div>
+					  </div>
+					  
+					  <div class="layui-form-item">
+					        <label class="layui-form-label">分组</label>
+					        <div class="layui-input-block">
+					          <!-- <select lay-search=""  name="group_id" id="group_id"></select> -->
+							  <div name="group_id" id="group_id" class="xm-select-demo"></div>
+					        </div>
+					  </div>
+					  
+					  <div class="layui-form-item">
+					        <label class="layui-form-label">类型</label>
+					        <div class="layui-input-block">
+					          <select lay-search=""  name="stock_type" id="stock_type" lay-filter="stock_type">
+								  <option value="">请选择</option>
+								  <option value="1">股票</option>
+								  <option value="2">基金</option>
+							  </select>
+					        </div>
+					  </div>
+					  
+					  <div class="layui-form-item" pane>
+					    <label class="layui-form-label">是否持仓</label>
+					    <div class="layui-input-block">
+					      <input type="radio" name="is_hold" value="1" title="是" lay-filter="radio-filter">
+					      <input type="radio" name="is_hold" value="0" title="否" lay-filter="radio-filter" checked>
+					    </div>
+					  </div>
+					  
+					  <div class="layui-form-item" id="display1" pane>
+					    <label class="layui-form-label">成本价</label>
+							<div class="layui-input-block">
+								<input type="number" lay-affix="number" name="cost_price" id="cost_price" value="0" step="0.001" class="layui-input">
+							</div>
+					  </div>
+					  
+					  <div class="layui-form-item" id="display2" pane>
+					    <label class="layui-form-label">持股数</label>
+							<div class="layui-input-block">
+								<input type="number" lay-affix="number" name="hold_number" id="hold_number" value="0" step="100" class="layui-input">
+							</div>
+					  </div>
+
+					  <div class="layui-form-item" style="float: right;">
+						<button class="pear-btn cancel-btn">取消</button>
+						<button class="pear-btn pear-btn-primary" lay-submit lay-filter="addSave">确定</button>
+					  </div>
+					  
+					</form>
+					
+				</div>
+			</div>
+		</div>
+		
+		{% include 'system/common/footer.html' %}
+		<script src="../../../static/layui_exts/xm-select.js"></script>
+		<script>
+			layui.use(function(){
+
+				let $ = layui.$;
+				let layer = layui.layer;
+				let form = layui.form;
+				let xmselect = layui.xmselect;  
+				
+				// 隐藏成本价
+				$('#display1').hide();
+				$('#display2').hide();
+				
+				form.on('radio(radio-filter)', function(data){
+					let elem = data.elem;
+				    let value = elem.value; // 获得 radio 值
+					// console.log(value);
+				
+					if (value=='0'){
+						$('#display1').hide();
+						$('#display2').hide(); 
+					}else{
+						$('#display1').show();
+						$('#display2').show();
+					}
+				  });
+				
+				//获取归属分组
+				$.getJSON("/stock/group/belong_project",function(d){
+					// console.log(d);
+					if(d.status==0){
+						
+						//sm-select下拉框
+						var demo2 = xmSelect.render({
+							el: '#group_id', 
+							model: { label: { type: 'text' } },
+							tree: {
+									show: true,
+									strict: false,
+									expandedKeys: true
+								},
+							prop: {
+								name: 'title',
+								value: 'id',
+							},
+							name: 'title',
+							filterable: true,
+							// radio: true, //单选
+							theme: {
+								color: '#00a1f1',
+							},
+							data: d.data,
+							on: function(data){
+									if(data.isAdd){
+										return data.change.slice(0, 1)
+									}
+								}
+						})
+					}else{
+						layer.msg(d.msg)
+					}
+				});
+				
+				//表单提交事件
+				form.on("submit(addSave)",function(data){
+					//获取表单提交的数据
+					let field = data.field;
+					let group_id = xmSelect.get('#group_id', true).getValue('valueStr'); // 获取归属分组
+					field.group_id = group_id; 
+					console.log(field);
+					
+					//AJAX向后端发送请求
+					$.ajax({
+						type:"post",
+						url:"/stock/market/addSave",
+						data:JSON.stringify(field),
+						contentType: 'application/json',
+						dataType:"json",
+						success:function(d){
+							// console.log(d);
+							if(d.status==0){
+								//关闭弹出层
+								let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+								layer.msg(d.msg);
+								parent.layer.close(index); // 再执行关闭
+							}else{
+								//失败
+								layer.msg(d.errors);
+							}
+						}
+					});
+					
+					//阻止表单默认提交
+					return false;
+				});
+				
+				// 取消
+				$('.cancel-btn').on('click', function(){  
+				    // console.log('取消按钮被点击了');  
+				    let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+				    parent.layer.close(index); // 执行关闭
+				  });  
+			
+			});
+			
+		</script>
+			
+		
+	</body>
+</html>

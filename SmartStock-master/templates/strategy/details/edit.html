@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>编辑</title>
+		{% include 'system/common/header.html' %}
+	</head>
+	<body>
+		 <div class="layui-container" style="margin-top: 30px;"> <!-- 添加一个容器，-->
+			<div class="layui-row"> <!-- 添加栅格，8等分，左右偏移2-->
+				<div class="layui-col-lg12">
+					<form class="layui-form layui-form-pane">  <!-- 给容器追加 class="layui-form-pane"，即可显示为方框风格 -->
+					  
+					  <!-- 隐藏域：id -->
+					  <input type="hidden" name="id" id="id"/>
+					  
+					  <div class="layui-form-item">
+					        <label class="layui-form-label">股票编码</label>
+					        <div class="layui-input-block">
+					          <input type="text" name="code" id="code" autocomplete="off" disabled lay-verify="required" class="layui-input">
+					        </div>
+					  </div>
+					  
+					  <div class="layui-form-item">
+							<label class="layui-form-label">股票名称</label>
+							<div class="layui-input-block">
+								<input type="text" name="name" id="name" autocomplete="off" disabled lay-verify="required" class="layui-input">
+							</div>
+					  </div>
+					  
+					  <div class="layui-form-item">
+					    <label class="layui-form-label">总投入预算</label>
+							<div class="layui-input-block">
+								<input type="number" lay-affix="number" name="total_invest_budget" disabled value="0" id="total_invest_budget" step="0" lay-verify="required" class="layui-input">
+							</div>
+					  </div>
+					  
+					  <div class="layui-form-item">
+					    <label class="layui-form-label">目标收益率</label>
+							<div class="layui-input-block">
+								<input type="number" lay-affix="number" name="income_rate_target" disabled value="0" id="income_rate_target" step="0.01" lay-verify="required" class="layui-input">
+							</div>
+					  </div>
+					  
+					  <div class="layui-form-item">
+							<label class="layui-form-label">投资策略</label>
+							<div class="layui-input-block">
+								<select lay-search=""  name="strategy_id" id="strategy_id" lay-verify="required" lay-filter="strategy_id"></select>
+							</div>
+					  </div>
+					  
+					  <div class="layui-form-item" id="display1" style="display: none;">
+							<label class="layui-form-label">涨跌幅阈值</label>
+							<div class="layui-input-block">
+							  <input type="number" lay-affix="number" name="zdf_stg" id="zdf_stg" value="0" step="0.01" lay-verify="required" class="layui-input">
+							</div>
+					  </div>
+					  
+					  <div class="layui-form-item" id="display3" style="display: none;">
+							<label class="layui-form-label">观察价格</label>
+							<div class="layui-input-block">
+							  <input type="number" lay-affix="number" name="view_price" value="0" id="view_price" step="0.01" lay-verify="required" class="layui-input">
+							</div>
+					  </div>
+					  
+					  <div class="layui-form-item" id="display2" style="display: none;">
+							<label class="layui-form-label">加仓幅度</label>
+							<div class="layui-input-block">
+								<input type="number" lay-affix="number" name="add_fund" id="add_fund" value="0" step="0.01" lay-verify="required" class="layui-input">
+							</div>
+					  </div>
+	  
+					  <div class="layui-form-item" style="float: right;">
+						<button class="pear-btn cancel-btn">取消</button>
+						<button class="pear-btn pear-btn-primary" lay-submit lay-filter="editSave">确定</button>
+					  </div>
+					  
+					</form>
+					
+				</div>
+			</div>
+		</div>
+		
+		{% include 'system/common/footer.html' %}
+		<script src="../../../static/layui_exts/customer/customer.js"></script>
+		<script>
+			layui.use(function(){
+
+				let $ = layui.$;
+				let layer = layui.layer;
+				let form = layui.form;
+				
+				//获取当前页面地址参数
+				let obj=getUrlParam();
+				// console.log(obj.strategy_id);
+				
+				// 监听策略
+				form.on('select(strategy_id)', function(data){
+					let strategy_id = data.value;
+					console.log(strategy_id)
+					if (strategy_id === "1") {  
+						// 金字塔买入法(N%)
+						$("#display1").show();
+						$("#display2").show();
+						$("#display3").hide();
+					} else if(strategy_id === "9"){
+						// 监控到价策略
+						$("#display1").hide();
+						$("#display2").show();
+						$("#display3").show();
+					} else{
+						$("#display1").hide();
+						$("#display2").hide();
+						$("#display3").hide();
+					}
+				})
+				
+				//获取策略
+				$.getJSON("/strategy/details/strategyList?type=0",function(d){
+					if(d.status==0){
+						
+						let list = d.data.options;
+						// console.log(list);
+						
+						let s='<option value=""></option>';
+						for(let i=0;i<list.length;i++){
+							s+='<option value="'+list[i].value+'">'+list[i].label+'</option>';
+						}
+						// console.log(s);
+						//将拼接好的字符串设置到分类的位置
+						$("#strategy_id").html(s);
+						
+						
+						let strategy_id = obj.strategy_id
+						// 设置选择框的值
+						document.getElementById('strategy_id').value = strategy_id;
+						//重新渲染表单的下拉框
+						form.render('select');  
+						
+						
+						if (strategy_id === "1") {
+							// 金字塔买入法(N%)
+							$("#display1").show();
+							$("#display2").show();
+							$("#display3").hide();
+						} else if(strategy_id === "9"){
+							// 监控到价策略
+							$("#display1").hide();
+							$("#display2").show();
+							$("#display3").show();
+						} else{
+							$("#display1").hide();
+							$("#display2").hide();
+							$("#display3").hide();
+						}
+						
+					}else{
+						layer.msg(d.msg);
+					}
+				});
+				
+				//表单提交事件
+				form.on("submit(editSave)",function(data){
+					//获取表单提交的数据
+					let field = data.field;
+					// console.log(field);
+					
+					//AJAX向后端发送请求
+					$.ajax({
+						type:"post",
+						url:"/strategy/details/editSave",
+						data:JSON.stringify(field),
+						contentType: 'application/json',
+						dataType:"json",
+						success:function(d){
+							// console.log(d);
+							if(d.status==0){
+								//关闭弹出层
+								let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+								layer.msg(d.msg);
+								parent.layer.close(index); // 再执行关闭
+							}else{
+								//失败
+								layer.msg(d.errors);
+							}
+						}
+					});
+					
+					//阻止表单默认提交
+					return false;
+				});
+				
+				// 取消
+				$('.cancel-btn').on('click', function(){  
+				    // console.log('取消按钮被点击了');  
+				    let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+				    parent.layer.close(index); // 执行关闭
+				  });  
+			
+			});
+			
+		</script>
+			
+		
+	</body>
+</html>

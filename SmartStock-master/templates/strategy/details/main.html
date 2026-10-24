@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<!-- 响应式布局 -->
+		 <meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>策略明细</title>
+		{% include 'system/common/header.html' %}
+		<link rel="stylesheet" href="../../../static/layui_exts/customer/customer.css" />
+	</head>
+	<body class="pear-container">
+		
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<form class="layui-form" action="">
+					<div class="layui-form-item">
+						
+						<label class="layui-form-label">股票编码</label>
+						<div class="layui-input-inline">
+						 <input type="text" name="code"  placeholder="名称" class="layui-input" lay-affix="clear">
+						</div>
+
+						<label class="layui-form-label">股票名称</label>
+						<div class="layui-input-inline">
+						 <input type="text" name="name"  placeholder="名称" class="layui-input" lay-affix="clear">
+						</div>
+
+					<button class="layui-btn layui-bg-blue" lay-submit lay-filter="search">
+						<i class="layui-icon layui-icon-search"></i>
+						搜索
+					</button>
+
+				  </div>
+				</form>
+				
+			</div>
+		</div>
+		
+		<!-- 根据后端数据生成数据表格 -->
+		<div class="layui-card">
+		    <div class="layui-card-body">
+		        <table class="layui-hide layui-table-cell" id="details" lay-filter="details"></table>
+		    </div>
+		</div>
+		
+		<!-- 引入 layui.js -->
+		{% include 'system/common/footer.html' %}
+		
+		<script type="text/html" id="power-toolbar">
+		        <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="addBtn">
+		            <i class="layui-icon layui-icon-add-1"></i>
+		            新增
+		        </button>
+		        <button class="pear-btn pear-btn-md" lay-event="batchDel">
+		            <i class="layui-icon layui-icon-delete"></i>
+		            删除
+		        </button>
+		</script>
+		
+		<script>
+			layui.use(function(){
+				//获取table组件的对象
+				let table = layui.table;
+				let $ = layui.$;
+				let layer = layui.layer;
+				let form = layui.form;
+				
+				//搜索
+				form.on('submit(search)', function(data){
+				    let field = data.field; // 获得表单字段
+					console.log(field);
+				    // 执行搜索重载
+				    table.reload('details', {
+				      page: {
+				        curr: 1 // 重新从第 1 页开始
+				      },
+				      where: field // 搜索的字段
+				    });
+				    return false; // 阻止默认 form 跳转
+				});
+				
+				//头部工具栏事件
+				table.on('toolbar(details)',function(obj){
+					// console.log("顶部工具栏事件被触发了....",obj);
+					
+					let event = obj.event;
+					
+					if(event=='addBtn'){
+						//添加事件
+						layer.open({
+							title:"添加",
+							type: 2,  //2 iframe 内联框架层，可同时存在多个层
+							content:'/strategy/details/add', 
+							area:['500px','500px'],
+							closeBtn:1,
+							end: function(){
+							    //刷新表格
+								table.reload("details")
+							}
+						});
+					
+					}else if(event=='batchDel'){
+						//批量删除事件
+						let id = obj.details.id;
+						let checkStatus = table.checkStatus(id);
+						// console.log(checkStatus);
+						//选中列表
+						let list = checkStatus.data;
+						// console.log(list);
+						
+						if(list && list.length==0){
+							layer.msg("没有选择要删除的数据");
+						}else{
+							layer.confirm('确认是否删除',{btn:['确定','取消']},function(index){
+								
+								let arr = list.map(list => String(list.id)).join(',');
+								// console.log(arr); // 输出: 10082,10081
+								
+								//AJAX
+								$.ajax({
+									type:"DELETE",
+									url:"/strategy/details/delAll?" + $.param({ detailsId: arr }),
+									dataType:"json",
+									success:function(d){
+										if(d.status==0){
+											layer.msg(d.msg);
+											//重新加载数据表格数据
+											table.reload("details")
+										}else{
+											layer.msg(d.msg);
+										}
+									}
+								});
+								//关闭弹出层
+								layer.close(index);
+							});
+						}
+						
+							
+						}
+					
+					});
+					
+				
+				//单元格事件处理
+				table.on('tool(details)',function(obj){
+					// console.log(obj); //前端打印obj
+					let event = obj.event;
+					if(event=='del'){
+						layer.confirm('确定删除?',{btn:['确定','取消']},function(index){
+							// 获取当前行id
+							let id = obj.data.id;
+							//AJAX调用,用let $ = layui.$引入jquery，调用删除接口，第一个参数是的接口地址，第二个参数是请求参数，第三个是回调函数
+							$.getJSON("/strategy/details/del",{id:id},function(d){
+								// console.log(d);
+								if(d.status==0){
+									//删除成功,表格数据刷新
+									layer.msg(d.msg);
+									table.reload("details")
+								}else{
+									layer.msg(d.msg);
+								}
+							});
+							//关闭提示框
+							layer.close(index);
+						});
+					}else if(event=='edit'){
+						//更新
+						layer.open({
+							title:"编辑",
+							type: 2,
+							content:"/strategy/details/edit?strategy_id="+obj.data.strategy_id,
+							area:['500px','600px'],
+							closeBtn:1,
+							end: function(){
+							    //刷新表格
+								table.reload("details")
+							},
+							success: function(layero, index, that){
+							   //获取弹出层的JQuery对象
+							   let body = layer.getChildFrame('body', index);
+							   // console.log(obj.data);
+							   // 给 iframe 页中的某个输入框赋值
+							   body.find('#id').val(obj.data.id);
+							   body.find('#name').val(obj.data.name);
+							   body.find('#code').val(obj.data.code);
+							   body.find('#zdf_stg').val(obj.data.zdf_stg);
+							   body.find('#zde_stg').val(obj.data.zde_stg);
+							   body.find('#income_rate_target').val(obj.data.income_rate_target);
+							   body.find('#income_target').val(obj.data.income_target);
+							   body.find('#strategy_id').val(obj.data.strategy_id);
+							   body.find('#strategy_name').val(obj.data.strategy_name);
+							   body.find('#total_invest_budget').val(obj.data.total_invest_budget);
+							   body.find('#view_price').val(obj.data.view_price);
+							   body.find('#add_fund').val(obj.data.add_fund);
+							   body.find('#total_invest_budget').val(obj.data.total_invest_budget);
+							   body.find('#income_rate_target').val(obj.data.income_rate_target);
+							}
+						});
+					}
+				});
+				
+				//调用对象中的函数进行表格生成
+				table.render({
+					elem:"#details",
+					url:"/strategy/details/list",
+					page: {
+						limit:10,
+						limits:[5,10,15,20],
+						prev:"上一页",
+						next:"下一页",
+						groups:10,
+						theme: '#1E9FFF'
+					},
+					skin: 'line',
+					request: {
+					  pageName: 'pageNo',
+					  limitName: 'pageSize'
+					},
+					parseData: function(res){
+						// console.log(res)
+						return {
+							"code": res.status, // 解析接口状态
+							"msg": res.msg, // 解析提示文本
+							"count": res.data.count, // 解析数据长度
+							"data": res.data.rows // 解析数据列表
+						}
+					},
+					toolbar:false,
+					cols:[[
+						// {type: 'checkbox', fixed: 'left'}, // 批量选择
+						{
+							title:"ID",
+							field:"id",
+							align:"center",
+						    style:'font-size: 15px',
+							hide: true
+						},
+						{
+							title:"用户名",
+							field:"user_name",
+							align:"center",
+						    style: 'font-size: 15px',
+							hide: true
+						},
+						{
+							title:"股票编码",
+							field:"code",
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"股票名称",
+							field:"name",
+							align:"center",
+                            style: 'font-size: 15px'
+						},
+						{
+							title:"最新价",
+							field:"zxj",
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"投资预算",
+							field:"total_invest_budget",
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"目标收益率",
+							field:"income_rate_target",
+							align:"center",
+						    style: 'font-size: 15px',
+							hide:true
+						},
+						{
+							title:"目标收益率",
+							field:"income_rate_target_%",
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"目标收益",
+							field:"income_target",
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"已投入",
+							field:"total_invested",
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"成本价",
+							field:"cost_price",
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"涨跌幅阈值",
+							field:"zdf_stg",
+							align:"center",
+						    style: 'font-size: 15px',
+							hide:true
+						},
+						{
+							title:"涨跌幅阈值",
+							field:"zdf_stg_%",
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						// {
+						// 	title:"涨跌额阈值",
+						// 	field:"zde_stg",
+						// 	align:"center",
+						//     style: 'font-size: 15px'
+						// },
+						{
+							title:"下一买点",
+							field:"next_price_buy",
+							templet: function(d){
+								if(d.next_price_buy<=0){
+									return '-'
+								}else{
+									return d.next_price_buy
+								}
+								},
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"建议股数",
+							field:"suggest_buy_num",
+							templet: function(d){
+								if(d.next_price_buy<=0){
+									return '-'
+								}else{
+									return d.suggest_buy_num
+								}
+								},
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"建议金额",
+							field:"suggest_buy_amt",
+							templet: function(d){
+								if(d.next_price_buy<=0){
+									return '-'
+								}else{
+									return d.suggest_buy_amt
+								}
+								},
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"下一卖点",
+							field:"next_price_sell",
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"是否监控",
+							templet: function(d){
+							        return '<input type="checkbox" name="is_monitor" value="'+ d.id +'" lay-skin="switch" lay-text="是|否" lay-filter="is_monitor" ' + 
+							               (d.is_monitor == 1 ? 'checked' : '') + '>'
+							      },
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						{
+							title:"策略名称",
+							field:"strategy_name",
+							align:"center",
+						    style: 'font-size: 15px',
+							width: 120
+						},
+						// {
+						// 	title:"策略说明",
+						// 	field:"remarks",
+						// 	align:"center",
+						//     style: 'font-size: 15px',
+						// 	width: 120
+						// },
+						{
+							title:"操作",
+							templet:function(d){
+								let s='<button type="button" lay-event="edit" class="pear-btn pear-btn-xs pear-btn-primary">编辑</button>'
+								s+='<button type="button" lay-event="del" class="pear-btn pear-btn-xs pear-btn-danger">删除</button>';
+								return s;
+							},
+							align:"center",
+						    style: 'font-size: 15px',
+							width: 120
+						}
+
+					]]
+				});
+				
+				// 监听开关组件的切换事件
+				form.on('switch(is_monitor)', function(data){
+				    // console.log(data.elem.checked); // 打印开关状态，true或false
+					let id = data.value
+					let is_monitor = data.elem.checked
+					
+					//AJAX调用
+					$.getJSON("/strategy/details/switch",{id:id,is_monitor:is_monitor},function(d){
+						// console.log(d);
+						if(d.status==0){
+							//修改成功
+							layer.msg(d.msg);
+							table.reload("details")
+						}else{
+							layer.msg(d.msg);
+						}
+					});
+				  });
+
+
+			})
+		</script>
+			
+		
+		
+	</body>
+</html>

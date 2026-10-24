@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>用户列表</title>
+		<link rel="stylesheet" href="{{ url_for('static', filename='layui/css/layui.css') }}"/>
+	</head>
+	<body>
+		 <div class="layui-container" style="margin-top: 30px;"> <!-- 添加一个容器，-->
+			<form class="layui-form">
+			  
+			  <!-- 隐藏域：role_id -->
+			  <input type="hidden" name="role_id" id="role_id" value="{{ role.id }}"/>
+			  
+			  <div class="layui-form-item">
+			      <label class="layui-form-label">已授权用户</label>
+			      <div class="layui-input-block" id="userCheckboxContainer">
+			          {% for user in users %}  <!-- 迭代用户列表 -->
+						  <input 
+							  value="{{ user.id }}" 
+							  title="{{ user.name }} ({{ user.id }})"
+							  type="checkbox"
+							  name="userIds"
+							  checked
+							  lay-skin="primary">
+					  {% endfor %}
+			      </div>
+			  </div>
+			  
+			  <div class="layui-form-item">
+					<label class="layui-form-label">批量添加用户</label>
+					<div class="layui-input-block">
+					  <textarea placeholder="多个用户以,分开" name="description" id="description" class="layui-textarea"></textarea>
+					</div>
+			  </div>
+			  
+			  <div class="layui-form-item" style="float: right;">
+				<button class="layui-btn layui-btn-primary cancel-btn">取消</button>
+				<button class="layui-btn" lay-submit lay-filter="usersUpdate">确定</button>
+			  </div>
+			  
+			</form>
+		</div>
+		
+		<script src="../../../static/layui/layui.js"></script>
+		<script src="../../../static/layui_exts/xm-select.js"></script>
+		<script>
+			layui.use(function(){
+
+				let $ = layui.$;
+				let layer = layui.layer;
+				let form = layui.form;
+				
+				//获取当前页面地址
+				let url = location.href;
+				// console.log(url);
+				//截取参数
+				let param = url.substring(url.lastIndexOf("?")+1,url.length);
+				let ps = param.split("&");
+				//截取参数
+				let obj={};
+				if(ps && ps.length>0){
+					for(let i=0;i<ps.length;i++){
+						let psList = ps[i].split("=");
+						obj[psList[0].trim()]=psList[1].trim();
+					}
+				}
+				// console.log(obj);
+				
+				//添加按钮
+				form.on("submit(usersUpdate)",function(data){
+					//获取表单提交的数据
+					let field = data.field;
+					let selectedUserIds = [];
+					let unselectedUserIds = [];
+					 
+					// 遍历所有复选框
+					$('input[type=checkbox]').each(function () {
+					    let userId = $(this).val(); // 获取当前复选框的值
+					    if ($(this).is(':checked')) {
+					        // 如果复选框被选中，则添加到已选数组
+					        selectedUserIds.push(userId);
+					    } else {
+					        // 如果复选框未被选中，则添加到未选数组
+					        unselectedUserIds.push(userId);
+					    }
+					});
+					field.selectedUserIds = selectedUserIds
+					field.unselectedUserIds = unselectedUserIds
+					// console.log(field);
+					
+					//AJAX向后端发送请求
+					$.ajax({
+						type:"post",
+						url:"/member/role/usersUpdate?role_id=" + obj.role_id,
+						data:JSON.stringify(field),
+						contentType: 'application/json',
+						dataType:"json",
+						success:function(d){
+							// console.log(d);
+							if(d.status==0){
+								//关闭弹出层
+								let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+								parent.layer.close(index); // 再执行关闭
+								layer.msg(d.msg);
+							}else{
+								//失败
+								layer.msg(d.errors);
+							}
+						},
+						error: function(xhr, status, error) {
+								// 处理 AJAX 请求失败的情况
+								layer.msg('请求失败：' + error);
+							}
+					});
+
+					//阻止表单默认提交
+					return false;
+
+				});
+
+				// 取消
+				$('.cancel-btn').on('click', function(){  
+				    // console.log('取消按钮被点击了');  
+				    let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+				    parent.layer.close(index); // 执行关闭
+					
+					//阻止表单默认提交
+					return false;
+				  });  
+				
+				
+				});
+
+		</script>
+			
+		
+	</body>
+</html>

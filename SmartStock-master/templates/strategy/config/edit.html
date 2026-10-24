@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>编辑</title>
+		{% include 'system/common/header.html' %}
+	</head>
+	<body>
+		 <div class="layui-container" style="margin-top: 30px;"> <!-- 添加一个容器，-->
+			<div class="layui-row"> <!-- 添加栅格，8等分，左右偏移2-->
+				<div class="layui-col-md8 layui-col-md-offset2">
+					<form class="layui-form layui-form-pane">  <!-- 给容器追加 class="layui-form-pane"，即可显示为方框风格 -->
+					  
+					  <!-- 隐藏域：id -->
+					  <input type="hidden" name="id" value="{{Strategy.id}}" id="id"/>
+
+					  <div class="layui-form-item">
+					        <label class="layui-form-label">策略名称</label>
+					        <div class="layui-input-block">
+					          <input type="text" name="name" id="name" value="{{Strategy.name}}" autocomplete="off" placeholder="策略名称" lay-verify="required" class="layui-input">
+					        </div>
+					  </div>
+					  
+					  <div class="layui-form-item">
+					        <label class="layui-form-label">适用范围</label>
+					        <div class="layui-input-block">
+					          <select id="type" name="type" lay-verify="required">
+					                <option value="">请选择</option>
+					                <option value="0" selected>个股</option>
+					                <option value="1">单笔交易</option>
+					          </select>
+					        </div>
+					  </div>
+
+					  <div class="layui-form-item">
+					        <label class="layui-form-label">策略说明</label>
+					        <div class="layui-input-block">
+								<textarea type="text" name="remarks" id="remarks" autocomplete="off" placeholder="策略说明" class="layui-textarea">{{Strategy.remarks}}</textarea>
+					        </div>
+					  </div>
+	  
+					  <div class="layui-form-item" style="float: right;">
+						<button class="pear-btn cancel-btn">取消</button>
+						<button class="pear-btn pear-btn-primary" lay-submit lay-filter="editSave">确定</button>
+					  </div>
+					  
+					</form>
+					
+				</div>
+			</div>
+		</div>
+		
+		{% include 'system/common/footer.html' %}
+		<script>
+			layui.use(function(){
+
+				let $ = layui.$;
+				let layer = layui.layer;
+				let form = layui.form;
+				
+				// 回显
+				$("#type").val("{{Strategy.type}}")
+				// 重新渲染表单的下拉框
+				form.render('select');
+				
+				
+				//表单提交事件
+				form.on("submit(editSave)",function(data){
+					//获取表单提交的数据
+					let field = data.field;
+					// console.log(field);
+					
+					//AJAX向后端发送请求
+					$.ajax({
+						type:"post",
+						url:"/strategy/config/editSave",
+						data:JSON.stringify(field),
+						contentType: 'application/json',
+						dataType:"json",
+						success:function(d){
+							// console.log(d);
+							if(d.status==0){
+								//关闭弹出层
+								let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+								layer.msg(d.msg);
+								parent.layer.close(index); // 再执行关闭
+							}else{
+								//失败
+								layer.msg(d.errors);
+							}
+						}
+					});
+					
+					//阻止表单默认提交
+					return false;
+				});
+				
+				// 取消
+				$('.cancel-btn').on('click', function(){  
+				    // console.log('取消按钮被点击了');  
+				    let index = parent.layer.getFrameIndex(window.name); // 先得到当前 iframe 层的索引
+				    parent.layer.close(index); // 执行关闭
+				  });  
+			
+			});
+			
+		</script>
+			
+		
+	</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<!-- 响应式布局 -->
+		 <meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>行情中心</title>
+		{% include 'system/common/header.html' %}
+	</head>
+	<body class="pear-container">
+		
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<form class="layui-form" action="">
+					<div class="layui-form-item">
+						
+						<label class="layui-form-label">编码</label>
+						<div class="layui-input-inline">
+						 <input type="text" name="id"  placeholder="编码" class="layui-input" lay-affix="clear">
+						</div>
+					  
+						<label class="layui-form-label">名称</label>
+						<div class="layui-input-inline">
+						 <input type="text" name="name"  placeholder="名称" class="layui-input" lay-affix="clear">
+						</div>
+
+					<button class="layui-btn layui-bg-blue" lay-submit lay-filter="search">
+						<i class="layui-icon layui-icon-search"></i>
+						搜索
+					</button>
+
+				  </div>
+				</form>
+				
+			</div>
+		</div>
+		
+		<!-- 根据后端数据生成数据表格 -->
+		<div class="layui-card">
+		    <div class="layui-card-body">
+		        <table class="layui-hide" id="market" lay-filter="market"></table>
+		    </div>
+		</div>
+		
+		<label id="updateTime" style="text-align: left; display: block; width: 100%; color: gray;">股票数据更新时间：{{updateTime}}</label>
+		
+		<!-- 引入 layui.js -->
+		{% include 'system/common/footer.html' %}
+		
+		<script>
+			layui.use(function(){
+				//获取table组件的对象
+				let table = layui.table;
+				let $ = layui.$;
+				let layer = layui.layer;
+				let form = layui.form;
+				
+				//搜索
+				form.on('submit(search)', function(data){
+				    let field = data.field; // 获得表单字段
+					console.log(field);
+				    // 执行搜索重载
+				    table.reload('market', {
+				      page: {
+				        curr: 1 // 重新从第 1 页开始
+				      },
+				      where: field // 搜索的字段
+				    });
+				    return false; // 阻止默认 form 跳转
+				});
+				
+				//头部工具栏事件
+				table.on('toolbar(market)',function(obj){
+					// console.log("顶部工具栏事件被触发了....",obj);
+					
+					let event = obj.event;
+					
+					if(event=='addBtn'){
+						//添加事件
+						layer.open({
+							title:"添加",
+							type: 2,  //2 iframe 内联框架层，可同时存在多个层
+							content:'/stock/market/add', 
+							area:['500px','500px'],
+							closeBtn:1,
+							end: function(){
+							    //刷新表格
+								table.reload("market")
+							}
+						});
+					
+					}else if(event=='batchDel'){
+						//批量删除事件
+						let id = obj.config.id;
+						let checkStatus = table.checkStatus(id);
+						// console.log(checkStatus);
+						//选中列表
+						let list = checkStatus.data;
+						// console.log(list);
+						
+						if(list && list.length==0){
+							layer.msg("没有选择要删除的数据");
+						}else{
+							layer.confirm('确认是否删除',{btn:['确定','取消']},function(index){
+								
+								let arr = list.map(list => String(list.id)).join(',');
+								// console.log(arr); // 输出: 10082,10081
+								
+								//AJAX
+								$.ajax({
+									type:"DELETE",
+									url:"/stock/market/delall?" + $.param({ marketId: arr }),
+									dataType:"json",
+									success:function(d){
+										if(d.status==0){
+											layer.msg(d.msg);
+											//重新加载数据表格数据
+											table.reload("market")
+										}else{
+											layer.msg(d.msg);
+										}
+									}
+								});
+								//关闭弹出层
+								layer.close(index);
+							});
+						}
+						
+							
+						}
+					
+					});
+					
+				
+				//单元格事件处理
+				table.on('tool(market)',function(obj){
+					// console.log(obj); //前端打印obj
+					let event = obj.event;
+					if(event=='del'){
+						layer.confirm('确定删除?',{btn:['确定','取消']},function(index){
+							// 获取当前行id
+							let code = obj.data.code;
+							//AJAX调用,用let $ = layui.$引入jquery，调用删除接口，第一个参数是的接口地址，第二个参数是请求参数，第三个是回调函数
+							$.getJSON("/stock/market/del",{code:code},function(d){
+								// console.log(d);
+								if(d.status==0){
+									//删除成功,表格数据刷新
+									layer.msg(d.msg);
+									table.reload("market")
+								}else{
+									layer.msg(d.msg);
+								}
+							});
+							//关闭提示框
+							layer.close(index);
+						});
+					}else if(event=='addBtn'){
+						//添加事件
+						layer.open({
+							title:"添加自选",
+							type: 2,  //2 iframe 内联框架层，可同时存在多个层
+							content:'/stock/market/add', 
+							area:['500px','500px'],
+							closeBtn:1,
+							end: function(){
+							    //刷新表格
+								table.reload("market")
+							},
+							success: function(layero, index, that){
+							   //获取弹出层的JQuery对象
+							   let body = layer.getChildFrame('body', index);
+							   // console.log(obj.data);
+							   // 给 iframe 页中的某个输入框赋值
+							   body.find('#code').val(obj.data.code);
+							   body.find('#name').val(obj.data.name);
+							}
+						});
+					}
+				});
+				
+				//调用对象中的函数进行表格生成
+				table.render({
+					elem:"#market",
+					url:"/stock/market/list",
+					page: {
+						limit:10,
+						limits:[5,10,15,20],
+						prev:"上一页",
+						next:"下一页",
+						groups:10,
+						theme: '#1E9FFF'
+					},
+					skin: 'line',
+					request: {
+					  pageName: 'pageNo',
+					  limitName: 'pageSize'
+					},
+					parseData: function(res){
+						// console.log(res)
+						return {
+							"code": res.status, // 解析接口状态
+							"msg": res.msg, // 解析提示文本
+							"count": res.data.count, // 解析数据长度
+							"data": res.data.rows // 解析数据列表
+						}
+					},
+					toolbar:false,
+					cols:[[
+						{
+							title:"编码",
+							field:"code",
+							align:"center",
+						    style: 'font-size: 15px',
+						},
+						{
+							title:"名称",
+							field:"name",
+							align:"center",
+                            style: 'font-size: 15px'
+						},
+						{
+							title:"最新价",
+							field:"zxj",
+							align:"center",
+                            style: 'font-size: 15px',
+							sort: true
+						},
+						{
+						    title: "涨跌幅",
+						    templet: function(d) {
+						        // 定义涨跌幅的背景颜色样式
+						        let chgStyle = '';
+								let value = ''
+								let value_percent = ''
+						        if (d.zde > 0) {
+									value = '+' + d.zde
+									value_percent = '+' + d.zdf
+						            chgStyle = 'style="color: red; font-size: 15px; font-weight: bold;"'; // 红色背景，白色文字以提高可读性
+						        } else if (d.zde < 0) {
+									value = d.zde
+									value_percent = d.zdf
+						            chgStyle = 'style="color: green; font-size: 15px; font-weight: bold;"'; // 绿色背景，白色文字
+						        } else {
+									value = d.zde
+									value_percent = d.zdf
+						            chgStyle = 'style="font-size: 15px; font-weight: bold;"'; // 无背景色
+						        }
+						        // 拼接涨跌幅和涨跌幅百分比的值
+						        let chgDisplay = '<div ' + chgStyle + '>' + value + '(' + value_percent + '%)</div>';
+						        // 返回合并后的HTML内容
+						        return chgDisplay
+						    },
+						    align: "center",
+							sort: true
+						},
+						{
+							title:"成交量",
+							field:"cjl",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"成交额",
+							field:"cje",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						// {
+						// 	title:"振幅",
+						// 	field:"zf",
+						// 	align:"center",
+						//     style: 'font-size: 15px',
+						// 	sort: true
+						// },
+						// {
+						// 	title:"最高",
+						// 	field:"zg",
+						// 	align:"center",
+						//     style: 'font-size: 15px',
+						// 	sort: true
+						// },
+						// {
+						// 	title:"最低",
+						// 	field:"zd",
+						// 	align:"center",
+						//     style: 'font-size: 15px',
+						// 	sort: true
+						// },
+						// {
+						// 	title:"今开",
+						// 	field:"jk",
+						// 	align:"center",
+						//     style: 'font-size: 15px',
+						// 	sort: true
+						// },
+						// {
+						// 	title:"量比",
+						// 	field:"lb",
+						// 	align:"center",
+						//     style: 'font-size: 15px'
+						// },
+						// {
+						// 	title:"换手率",
+						// 	field:"hsl",
+						// 	align:"center",
+						//     style: 'font-size: 15px',
+						// 	sort: true
+						// },
+						{
+							title:"市盈率-动态",
+							field:"syl_dt",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"市净率",
+							field:"sjl",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"总市值",
+							field:"zsz",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"流通市值",
+							field:"ltsz",
+							align:"center",
+						    style: 'font-size: 15px'
+						},
+						// {
+						// 	title:"涨速",
+						// 	field:"zss",
+						// 	align:"center",
+						//     style: 'font-size: 15px'
+						// },
+						// {
+						// 	title:"5分钟涨跌",
+						// 	field:"zd_5min",
+						// 	align:"center",
+						//     style: 'font-size: 15px'
+						// },
+						{
+							title:"60日涨跌幅",
+							field:"zdf_60d",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"年初至今涨跌幅",
+							field:"zdf_nzj",
+							align:"center",
+						    style: 'font-size: 15px',
+							sort: true
+						},
+						{
+							title:"加自选",
+							templet:function(d){
+								if (d.is_selected==0){
+									s='<button type="button" lay-event="addBtn" class="layui-btn layui-btn-sm layui-bg-blue"><i class="layui-icon layui-icon-add-1"></i></button>'
+								}else{
+									s='<button type="button" lay-event="del" class="layui-btn layui-btn-sm layui-bg-red"><i class="layui-icon layui-icon-subtraction"></i></button>'
+								}
+								return s;
+							},
+							align:"center",
+                            style: 'font-size: 10px'
+						}
+					]]
+				});
+
+			})
+		</script>
+			
+		
+		
+	</body>
+</html>
